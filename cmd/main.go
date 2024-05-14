@@ -84,16 +84,12 @@ func main() {
 	switch sim.Init {
 	case "rand":
 		graph.Nodes[sim.rng.Intn(sim.N)].Value = Infected
-		break
 	case "max":
 		graph.Nodes[graph.MaxDegreeNode()].Value = Infected
-		break
 	case "min":
 		graph.Nodes[graph.MinDegreeNode()].Value = Infected
-		break
 	default:
 		log.Fatal("Invalid init type")
-		break
 	}
 	infected := 1
 
@@ -110,17 +106,12 @@ func main() {
 		case node1.Value == Susceptible && node2.Value == Infected:
 			sim.infect(node1, node2)
 			infected++
-			break
 		case node1.Value == Infected && node2.Value == Susceptible:
 			sim.infect(node2, node1)
 			infected++
-			break
 		case node1.Value == Infected && node2.Value == Infected:
 			sim.restore(node1, node2)
 			infected--
-			break
-		default:
-			break
 		}
 	}
 }
