@@ -34,9 +34,9 @@ func (graph *Graph[T]) MinDegreeNode() int {
 	return curr
 }
 
-func BarabasiAlbert[T any](rng *rand.Rand, N int, m int, defaultValue T) Graph[T] {
-	nodes := make([]Node[T], N)
-	adjList := make([][]int, N)
+func BarabasiAlbert[T any](rng *rand.Rand, n int, m int, defaultValue T) Graph[T] {
+	nodes := make([]Node[T], n)
+	adjList := make([][]int, n)
 	nodePool := []int{}
 
 	// initial nodes
@@ -49,7 +49,7 @@ func BarabasiAlbert[T any](rng *rand.Rand, N int, m int, defaultValue T) Graph[T
 	}
 
 	// populate graph
-	for t := m; t < N; t++ {
+	for t := m; t < n; t++ {
 		edges := []int{}
 		currNode := &nodes[t]
 
@@ -80,4 +80,29 @@ func BarabasiAlbert[T any](rng *rand.Rand, N int, m int, defaultValue T) Graph[T
 	}
 }
 
-// TODO erdos renyi
+func ErdosRenyi[T any](rng *rand.Rand, n int, p float32, defaultValue T) Graph[T] {
+	nodes := make([]Node[T], n)
+	adjList := make([][]int, n)
+
+	for i := 0; i < n; i++ {
+		nodes[i].Value = defaultValue
+		nodes[i].K = 0
+	}
+
+	for i := 0; i < n; i++ {
+		for j := 0; j < i; j++ {
+			if rng.Float32() < p {
+				adjList[i] = append(adjList[i], j)
+				nodes[i].K++
+
+				adjList[j] = append(adjList[j], i)
+				nodes[j].K++
+			}
+		}
+	}
+
+	return Graph[T]{
+		Nodes:   nodes,
+		AdjList: adjList,
+	}
+}

@@ -24,6 +24,7 @@ type Simulation struct {
 	Steps   int     `json:"steps"`
 	N       int     `json:"n"`
 	M       int     `json:"m"`
+	P       float32 `json:"p"`
 	Beta    float32 `json:"beta"`
 	Gamma   float32 `json:"gamma"`
 	rng     *rand.Rand
@@ -75,8 +76,14 @@ func main() {
 	switch sim.Network {
 	case "ba":
 		graph = networks.BarabasiAlbert(sim.rng, sim.N, sim.M, Susceptible)
+		if sim.M == 0 || sim.M < 2 {
+			log.Fatal("m must be greater than 2")
+		}
 	case "er":
-		// TODO erdos renyi
+		graph = networks.ErdosRenyi(sim.rng, sim.N, sim.P, Susceptible)
+		if sim.P == 0 {
+			log.Fatal("p must be greater than 0")
+		}
 	default:
 		log.Fatal("Invalid network type")
 	}
@@ -98,6 +105,10 @@ func main() {
 
 		idx1 := sim.rng.Intn(sim.N)
 		node1 := &graph.Nodes[idx1]
+
+		if node1.K == 0 {
+			continue
+		}
 
 		idx2 := graph.AdjList[idx1][sim.rng.Intn(node1.K)]
 		node2 := &graph.Nodes[idx2]
