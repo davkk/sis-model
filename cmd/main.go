@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 
@@ -18,10 +16,9 @@ const (
 	Infected
 )
 
-type Simulation struct {
+type Config struct {
 	Network string  `json:"network"`
 	Init    string  `json:"init"`
-	Steps   int     `json:"steps"`
 	N       int     `json:"n"`
 	M       int     `json:"m"`
 	P       float32 `json:"p"`
@@ -30,62 +27,55 @@ type Simulation struct {
 	rng     *rand.Rand
 }
 
-func parseConfig() Simulation {
-	var configFile string
-	var sim Simulation
-
-	flag.StringVar(&configFile, "config", "./config.json", "Path to config file")
-	flag.Parse()
-
-	file, err := os.ReadFile(configFile)
-	if err != nil {
-		log.Fatal("Error when opening file: ", err)
+func parseConfig() Config {
+	if len(os.Args) != 2 {
+		panic("Usage: ./main.out path/to/config")
 	}
 
-	err = json.Unmarshal(file, &sim)
+	path := os.Args[1]
+	var config Config
+
+	file, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal("Could not parse config file: ", err)
+		panic("error while reading config file")
 	}
 
-	sim.rng = rand.New(rand.NewSource(2001))
-	return sim
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		panic("error while parsing JSON")
+	}
+
+	config.rng = rand.New(rand.NewSource(2001))
+
+	return config
 }
 
-func (sim *Simulation) infect(node1 *networks.Node[State], node2 *networks.Node[State]) {
-	x := sim.rng.Float32()
-	if sim.Beta == 0 && x < 1-1/float32(node2.K) {
-		node1.Value = Infected
-	} else if x < sim.Beta {
-		node1.Value = Infected
-	}
-}
-
-func (sim *Simulation) restore(node1 *networks.Node[State], node2 *networks.Node[State]) {
-	x := sim.rng.Float32()
-	if sim.Gamma == 0 && x < 1/float32(node2.K) {
-		node1.Value = Susceptible
-	} else if x < sim.Gamma {
-		node1.Value = Susceptible
-	}
+func prob(k int) float32 {
+	return 1 / float32(k)
 }
 
 func main() {
 	sim := parseConfig()
+	maxSteps := int(1e6)
+
+	if sim.N == 0 {
+		panic("n must be greater than zero")
+	}
 
 	var graph networks.Graph[State]
 	switch sim.Network {
 	case "ba":
 		graph = networks.BarabasiAlbert(sim.rng, sim.N, sim.M, Susceptible)
 		if sim.M == 0 || sim.M < 2 {
-			log.Fatal("m must be greater than 2")
+			panic("m must be greater than 2")
 		}
 	case "er":
 		graph = networks.ErdosRenyi(sim.rng, sim.N, sim.P, Susceptible)
 		if sim.P == 0 {
-			log.Fatal("p must be greater than 0")
+			panic("p must be greater than 0")
 		}
 	default:
-		log.Fatal("Invalid network type")
+		panic("invalid network type")
 	}
 
 	switch sim.Init {
@@ -96,13 +86,11 @@ func main() {
 	case "min":
 		graph.Nodes[graph.MinDegreeNode()].Value = Infected
 	default:
-		log.Fatal("Invalid init type")
+		panic("invalid init type")
 	}
 	infected := 1
 
-	for step := 0; step < sim.Steps && infected >= 0 && infected <= sim.N; step++ {
-		fmt.Println(step, sim.N-infected, infected)
-
+	for step := 0; step < maxSteps && infected > 0 && infected < sim.N; step++ {
 		idx1 := sim.rng.Intn(sim.N)
 		node1 := &graph.Nodes[idx1]
 
@@ -113,16 +101,26 @@ func main() {
 		idx2 := graph.AdjList[idx1][sim.rng.Intn(node1.K)]
 		node2 := &graph.Nodes[idx2]
 
+		x := sim.rng.Float32()
+
 		switch {
 		case node1.Value == Susceptible && node2.Value == Infected:
-			sim.infect(node1, node2)
+			if sim.Beta == 0 && x < 1-prob(node2.K) || x < sim.Beta {
+				node1.Value = Infected
+			}
 			infected++
 		case node1.Value == Infected && node2.Value == Susceptible:
-			sim.infect(node2, node1)
+			if sim.Beta == 0 && x < 1-prob(node1.K) || x < sim.Beta {
+				node2.Value = Infected
+			}
 			infected++
 		case node1.Value == Infected && node2.Value == Infected:
-			sim.restore(node1, node2)
+			if sim.Gamma == 0 && x < prob(node2.K) || x < sim.Gamma {
+				node1.Value = Susceptible
+			}
 			infected--
 		}
+
+		fmt.Println(step, sim.N-infected, infected)
 	}
 }

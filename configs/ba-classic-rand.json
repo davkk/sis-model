@@ -1,0 +1,8 @@
+{
+  "network": "ba",
+  "init": "rand",
+  "n": 10000,
+  "m": 2,
+  "beta": 0.2,
+  "gamma": 0.08
+}
