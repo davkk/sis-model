@@ -17,14 +17,14 @@ const (
 )
 
 type Config struct {
-	Network string  `json:"network"`
-	Init    string  `json:"init"`
-	N       int     `json:"n"`
-	M       int     `json:"m"`
-	P       float32 `json:"p"`
-	Beta    float32 `json:"beta"`
-	Gamma   float32 `json:"gamma"`
-	rng     *rand.Rand
+	Network     string  `json:"network"`
+	Init        string  `json:"init"`
+	N           int     `json:"n"`
+	M           int     `json:"m"`
+	P           float32 `json:"p"`
+	Beta        float32 `json:"beta"`
+	Gamma       float32 `json:"gamma"`
+	rng         *rand.Rand
 }
 
 func parseConfig() Config {
@@ -50,8 +50,11 @@ func parseConfig() Config {
 	return config
 }
 
-func prob(k int) float32 {
-	return 1 / float32(k)
+func prob(p float32, k int, maxK int) float32 {
+	if p < 0 {
+		return float32(k) / float32(maxK)
+	}
+	return p
 }
 
 func main() {
@@ -88,7 +91,9 @@ func main() {
 	default:
 		panic("invalid init type")
 	}
+
 	infected := 1
+	maxK := graph.Nodes[graph.MaxDegreeNode()].K
 
 	for step := 0; step < steps; step++ {
 		fmt.Println(step, infected, sim.N-infected)
@@ -100,13 +105,13 @@ func main() {
 				for _, nnIdx := range graph.AdjList[idx] {
 					nnNode := &graph.Nodes[nnIdx]
 
-					if nnNode.Value == Susceptible && sim.rng.Float32() < sim.Beta {
+					if nnNode.Value == Susceptible && sim.rng.Float32() < prob(sim.Beta, node.K, maxK) {
 						nnNode.Value = Infected
 						infected++
 					}
 				}
 
-				if sim.rng.Float32() < sim.Gamma {
+				if sim.rng.Float32() < prob(sim.Gamma, node.K, maxK) {
 					node.Value = Susceptible
 					infected--
 				}
