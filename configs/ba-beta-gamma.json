@@ -2,5 +2,7 @@
   "network": "ba",
   "init": "max",
   "n": 10000,
-  "m": 2
+  "m": 2,
+  "beta": -1,
+  "gamma": -1
 }
