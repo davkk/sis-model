@@ -27,7 +27,8 @@ func (graph *Graph[T]) MaxDegreeNode() int {
 func (graph *Graph[T]) MinDegreeNode() int {
 	curr := 0
 	for idx := 0; idx < len(graph.Nodes); idx++ {
-		if graph.Nodes[curr].K > graph.Nodes[idx].K {
+		currNode := graph.Nodes[curr]
+		if currNode.K > graph.Nodes[idx].K {
 			curr = idx
 		}
 	}
@@ -51,25 +52,28 @@ func BarabasiAlbert[T any](rng *rand.Rand, n int, m int, defaultValue T) Graph[T
 	// populate graph
 	for t := m; t < n; t++ {
 		edges := []int{}
-		currNode := &nodes[t]
+		tmpPool := []int{}
 
+	outer:
 		for len(edges) < m {
 			randNode := nodePool[rng.Intn(len(nodePool))]
-			for node := range edges {
+			for _, node := range edges {
 				if node == randNode {
-					continue
+					continue outer
 				}
 			}
 
-			nodePool = append(nodePool, randNode, t)
+			tmpPool = append(tmpPool, randNode, t)
 			edges = append(edges, randNode)
 
 			adjList[randNode] = append(adjList[randNode], t)
 			nodes[randNode].K++
 		}
 
+		nodePool = append(nodePool, tmpPool...)
 		adjList[t] = edges
 
+		currNode := &nodes[t]
 		currNode.K = 2
 		currNode.Value = defaultValue
 	}

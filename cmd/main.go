@@ -56,7 +56,7 @@ func prob(k int) float32 {
 
 func main() {
 	sim := parseConfig()
-	maxSteps := int(1e6)
+	steps := int(1e3)
 
 	if sim.N == 0 {
 		panic("n must be greater than zero")
@@ -90,37 +90,27 @@ func main() {
 	}
 	infected := 1
 
-	for step := 0; step < maxSteps && infected > 0 && infected < sim.N; step++ {
-		idx1 := sim.rng.Intn(sim.N)
-		node1 := &graph.Nodes[idx1]
+	for step := 0; step < steps; step++ {
+		fmt.Println(step, infected, sim.N-infected)
 
-		if node1.K == 0 {
-			continue
+		for idx := 0; idx < sim.N; idx++ {
+			node := &graph.Nodes[idx]
+
+			if node.K > 0 && node.Value == Infected {
+				for _, nnIdx := range graph.AdjList[idx] {
+					nnNode := &graph.Nodes[nnIdx]
+
+					if nnNode.Value == Susceptible && sim.rng.Float32() < sim.Beta {
+						nnNode.Value = Infected
+						infected++
+					}
+				}
+
+				if sim.rng.Float32() < sim.Gamma {
+					node.Value = Susceptible
+					infected--
+				}
+			}
 		}
-
-		idx2 := graph.AdjList[idx1][sim.rng.Intn(node1.K)]
-		node2 := &graph.Nodes[idx2]
-
-		x := sim.rng.Float32()
-
-		switch {
-		case node1.Value == Susceptible && node2.Value == Infected:
-			if sim.Beta == 0 && x < 1-prob(node2.K) || x < sim.Beta {
-				node1.Value = Infected
-			}
-			infected++
-		case node1.Value == Infected && node2.Value == Susceptible:
-			if sim.Beta == 0 && x < 1-prob(node1.K) || x < sim.Beta {
-				node2.Value = Infected
-			}
-			infected++
-		case node1.Value == Infected && node2.Value == Infected:
-			if sim.Gamma == 0 && x < prob(node2.K) || x < sim.Gamma {
-				node1.Value = Susceptible
-			}
-			infected--
-		}
-
-		fmt.Println(step, sim.N-infected, infected)
 	}
 }
