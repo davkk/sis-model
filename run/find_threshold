@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import io
+import sys
+
+import numpy as np
+
+data = io.StringIO(sys.stdin.read())
+ratio, infected = np.loadtxt(data).T
+
+infected -= np.average(infected)
+
+step = np.hstack((np.ones(infected.size), -1 * np.ones(infected.size)))
+infected_step = np.convolve(infected, step, mode="valid")
+
+threshold = np.argmax(infected_step) - 2
+print(ratio[threshold])

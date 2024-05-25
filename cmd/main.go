@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"math/rand"
-	"os"
+	"strings"
 
 	"sis-model/internal/networks"
 )
@@ -16,64 +16,75 @@ const (
 	Infected
 )
 
-type Config struct {
-	Network     string  `json:"network"`
-	Init        string  `json:"init"`
-	N           int     `json:"n"`
-	M           int     `json:"m"`
-	P           float32 `json:"p"`
-	Beta        float32 `json:"beta"`
-	Gamma       float32 `json:"gamma"`
-	rng         *rand.Rand
+type Simulation struct {
+	NetworkType string
+	InitType    string
+	KDep        string
+	N           int
+	M           int
+	P           float64
+	Beta        float64
+	Gamma       float64
 }
 
-func parseConfig() Config {
-	if len(os.Args) != 2 {
-		panic("Usage: ./main.out path/to/config")
-	}
+func (sim *Simulation) parseConfig() {
+	flag.StringVar(&sim.NetworkType, "network", "", "network type")
+	flag.StringVar(&sim.InitType, "init", "", "initial infection type")
+	flag.StringVar(&sim.KDep, "k", "none", "dependece on node degree")
+	flag.IntVar(&sim.N, "n", 0, "number of nodes")
+	flag.IntVar(&sim.M, "m", 0, "BA: m parameter")
+	flag.Float64Var(&sim.P, "p", 0, "ER: p parameter")
+	flag.Float64Var(&sim.Beta, "beta", 0, "SIS: beta parameter")
+	flag.Float64Var(&sim.Gamma, "gamma", 0, "SIS: gamma parameter")
+	flag.Parse()
 
-	path := os.Args[1]
-	var config Config
-
-	file, err := os.ReadFile(path)
-	if err != nil {
-		panic("error while reading config file")
-	}
-
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		panic("error while parsing JSON")
-	}
-
-	config.rng = rand.New(rand.NewSource(2001))
-
-	return config
+	sim.NetworkType = strings.ToLower(sim.NetworkType)
+	sim.InitType = strings.ToLower(sim.InitType)
+	sim.KDep = strings.ToLower(sim.KDep)
 }
 
-func prob(p float32, k int, maxK int) float32 {
-	if p < 0 {
-		return float32(k) / float32(maxK)
+func (sim *Simulation) beta(k int, maxK int) float64 {
+	if sim.KDep == "beta" || sim.KDep == "both" {
+		return sim.Beta * float64(k) / float64(maxK)
 	}
-	return p
+	return sim.Beta
+}
+
+func (sim *Simulation) gamma(k int, maxK int) float64 {
+	if sim.KDep == "gamma" || sim.KDep == "both" {
+		return sim.Gamma * float64(k) / float64(maxK)
+	}
+	return sim.Gamma
 }
 
 func main() {
-	sim := parseConfig()
+	var sim Simulation
+	sim.parseConfig()
+
 	steps := int(1e3)
 
 	if sim.N == 0 {
 		panic("n must be greater than zero")
 	}
 
+	switch sim.KDep {
+	case "both":
+	case "beta":
+	case "gamma":
+	case "none":
+	default:
+		panic("invalid k dependence value")
+	}
+
 	var graph networks.Graph[State]
-	switch sim.Network {
+	switch sim.NetworkType {
 	case "ba":
-		graph = networks.BarabasiAlbert(sim.rng, sim.N, sim.M, Susceptible)
+		graph = networks.BarabasiAlbert(sim.N, sim.M, Susceptible)
 		if sim.M == 0 || sim.M < 2 {
 			panic("m must be greater than 2")
 		}
 	case "er":
-		graph = networks.ErdosRenyi(sim.rng, sim.N, sim.P, Susceptible)
+		graph = networks.ErdosRenyi(sim.N, sim.P, Susceptible)
 		if sim.P == 0 {
 			panic("p must be greater than 0")
 		}
@@ -81,9 +92,9 @@ func main() {
 		panic("invalid network type")
 	}
 
-	switch sim.Init {
-	case "rand":
-		graph.Nodes[sim.rng.Intn(sim.N)].Value = Infected
+	switch sim.InitType {
+	case "rnd":
+		graph.Nodes[rand.Intn(sim.N)].Value = Infected
 	case "max":
 		graph.Nodes[graph.MaxDegreeNode()].Value = Infected
 	case "min":
@@ -94,9 +105,10 @@ func main() {
 
 	infected := 1
 	maxK := graph.Nodes[graph.MaxDegreeNode()].K
+	lambda := float64(sim.Beta) / float64(sim.Gamma)
 
 	for step := 0; step < steps; step++ {
-		fmt.Println(step, infected, sim.N-infected)
+		fmt.Println(lambda, step, float64(infected)/float64(sim.N))
 
 		for idx := 0; idx < sim.N; idx++ {
 			node := &graph.Nodes[idx]
@@ -104,14 +116,17 @@ func main() {
 			if node.K > 0 && node.Value == Infected {
 				for _, nnIdx := range graph.AdjList[idx] {
 					nnNode := &graph.Nodes[nnIdx]
+					if nnNode.Value == Infected {
+						continue
+					}
 
-					if nnNode.Value == Susceptible && sim.rng.Float32() < prob(sim.Beta, node.K, maxK) {
+					if rand.Float64() < sim.beta(node.K, maxK) {
 						nnNode.Value = Infected
 						infected++
 					}
 				}
 
-				if sim.rng.Float32() < prob(sim.Gamma, node.K, maxK) {
+				if rand.Float64() < sim.gamma(node.K, maxK) {
 					node.Value = Susceptible
 					infected--
 				}

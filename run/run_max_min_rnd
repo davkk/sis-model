@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+now=`date +%s`
+
+parallel --lb \
+    go run cmd/main.go -network=ba -n=10000 -m=2 -init={1} -beta={2} -gamma=0.1 \
+        \| average_last_10 \
+        \| awk \'{ print \"{1}\", \$0 }\' \
+        ::: max min rnd \
+        ::: `seq 0 0.01 0.1` \
+        ::: {1..1}
+    # | tee ${output_dir}/ba_max_min_rnd \
+    # | python plot/plot_max_min_rnd.py \
+    #     --out ba_max_min_rnd \
+    #     --xlabel "$\beta / \gamma$" \
+    #     --ylabel "procent zarażonych"

@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import io
+import sys
+
+import pandas as pd
+
+df = pd.read_csv(io.StringIO(sys.stdin.read()), sep="\\s+", header=None)
+df = df.groupby(list(map(int, sys.argv[1:]))).mean().reset_index()
+
+df.to_csv(sys.stdout, sep=" ", index=False, header=False)

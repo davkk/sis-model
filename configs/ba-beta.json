@@ -1,8 +1,0 @@
-{
-  "network": "ba",
-  "init": "max",
-  "n": 10000,
-  "m": 2,
-  "gamma": 0.08,
-  "beta": -1
-}

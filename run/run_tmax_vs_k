@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+k=${1:-"none"}
+now=`date +%s`
+
+parallel --lb \
+    go run ./cmd/main.go -network=ba -n=1000 -m={1} -init=max -beta=0.1 -gamma=0.1 -k=$k \
+    \| average_by 0 1 \
+    \| tee ${OUTPUT}/${k}/ba_infected_vs_step_m={1} \
+    \| awk \'{ print \$2, \$3 }\' \
+    \| find_plateau \
+    \| awk \'{ print 2 \* {1}, \$1 }\' \
+    ::: {2..15} \
+    ::: {1..20} \
+| tee ${OUTPUT}/${k}/ba_tmax_vs_k_$now \
+| python ${PLOT}/plot_x_vs_y.py \
+    --out ${FIGURES}/${k}/ba_tmax_vs_k.pdf \
+    --xlabel "średni stopień $\langle k \rangle$" \
+    --ylabel "czas do maks. liczby zarażonych \$t_{\max}$"
+

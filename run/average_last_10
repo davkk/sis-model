@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+tail -n 10 $1 \
+| awk '
+    { sum += $3 }
+    END { print $1, sum/10 }
+'
