@@ -1,7 +1,13 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
-tail -n 10 $1 \
-| awk '
-    { sum += $3 }
-    END { print $1, sum/10 }
-'
+import io
+import sys
+
+import numpy as np
+from scipy.stats import trim_mean
+
+data = io.StringIO(sys.stdin.read())
+ratio, _, infected = np.loadtxt(data).T
+
+trimmed_mean = trim_mean(infected, proportiontocut=0.01)
+print(ratio[0], trimmed_mean)

@@ -13,7 +13,6 @@ plt.plot(
     infected,
     "+",
     label="zarażony",
-    markersize=4,
 )
 
 plt.plot(
@@ -21,13 +20,8 @@ plt.plot(
     1 - infected,
     "+",
     label="podatny",
-    markersize=4,
 )
 
-plt.xlabel("krok symulacji")
-plt.ylabel("liczność stanu")
-
-plt.xlim(0, 100)
 plt.legend()
 
 common.annotate_plot(args)

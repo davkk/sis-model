@@ -1,5 +1,5 @@
 import common
-import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from pandas.api.types import is_numeric_dtype
 
@@ -14,25 +14,23 @@ def mean_str(col):
 common.set_custom_pyplot_styles()
 
 data, args = common.parse_input()
-init, ratio, infected = np.loadtxt(data).T
 
-fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
+df = pd.read_csv(data, sep="\\s+", names=["init", "ratio", "infected"])
+df = df.groupby("init").agg(list).reset_index()
 
 legend = dict(max="maksymalny $k$", min="minimalny $k$", rnd="losowy $k$")
 
-for idx, ax in enumerate(axs):
-    ax.plot(
-        ratio,
-        infected,
-        "+",
-        markersize=6,
-        label="wynik symulacji",
+for idx in range(len(df)):
+    plt.plot(
+        df.ratio[idx],
+        df.infected[idx],
+        "+-",
+        label=legend[df.init[idx]],
+        linewidth=0.5,
     )
-    ax.set_title(legend[np.unique(init)])
-    ax.legend()
 
-fig.supxlabel(args.xlabel)
-fig.supylabel(args.ylabel)
+plt.legend()
+plt.tight_layout()
 
-fig.tight_layout()
+common.annotate_plot(args)
 common.save_plot(args)

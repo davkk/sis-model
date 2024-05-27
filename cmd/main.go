@@ -20,6 +20,7 @@ type Simulation struct {
 	NetworkType string
 	InitType    string
 	KDep        string
+	Steps       int
 	N           int
 	M           int
 	P           float64
@@ -31,6 +32,7 @@ func (sim *Simulation) parseConfig() {
 	flag.StringVar(&sim.NetworkType, "network", "", "network type")
 	flag.StringVar(&sim.InitType, "init", "", "initial infection type")
 	flag.StringVar(&sim.KDep, "k", "none", "dependece on node degree")
+	flag.IntVar(&sim.Steps, "steps", 1e3, "number of steps")
 	flag.IntVar(&sim.N, "n", 0, "number of nodes")
 	flag.IntVar(&sim.M, "m", 0, "BA: m parameter")
 	flag.Float64Var(&sim.P, "p", 0, "ER: p parameter")
@@ -61,7 +63,7 @@ func main() {
 	var sim Simulation
 	sim.parseConfig()
 
-	steps := int(1e3)
+	steps := int(sim.Steps)
 
 	if sim.N == 0 {
 		panic("n must be greater than zero")

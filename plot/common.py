@@ -51,8 +51,8 @@ def set_custom_pyplot_styles():
 \usepackage[cal=boondoxo]{mathalfa} % mathcal from STIX, unslanted a bit
 \renewcommand*\oldstylenums[1]{\textosf{#1}}"""
 
-    plt.rcParams["figure.figsize"] = (5, 3.5)
-    plt.rcParams["figure.dpi"] = 300
+    # plt.rcParams["figure.figsize"] = (5, 3.5)
+    # plt.rcParams["figure.dpi"] = 300
 
     plt.rcParams["axes.formatter.limits"] = -3, 3
     plt.rcParams["axes.grid"] = False

@@ -11,10 +11,11 @@ parallel --lb \
     \| find_plateau \
     \| awk \'{ print 2 \* {1}, \$1 }\' \
     ::: {2..15} \
-    ::: {1..20} \
+    ::: {1..10} \
+| average_by 0 \
 | tee ${OUTPUT}/${k}/ba_tmax_vs_k_$now \
 | python ${PLOT}/plot_x_vs_y.py \
     --out ${FIGURES}/${k}/ba_tmax_vs_k.pdf \
-    --xlabel "średni stopień $\langle k \rangle$" \
-    --ylabel "czas do maks. liczby zarażonych \$t_{\max}$"
+    --xlabel "średni stopień węzła $\langle k \rangle$" \
+    --ylabel "liczba kroków do \$i_{\max}$"
 
