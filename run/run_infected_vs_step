@@ -4,12 +4,15 @@ k=${1:-"none"}
 steps=${2:-1000}
 now=`date +%s`
 
+beta=$3
+gamma=$4
+
 parallel --lb \
-    go run cmd/main.go -network=ba -n=1000 -m=2 -init=max -beta=0.1 -gamma=0.1 -steps=$steps -k=$k \
+    go run cmd/main.go -network=ba -n=10000 -m=2 -init=max -beta=$beta -gamma=$gamma -steps=$steps -k=$k \
     ::: {1..20} \
     | average_by 0 1 \
     | tee ${OUTPUT}/${k}/ba_infected_vs_step_$now \
     | python ${PLOT}/plot_infected_vs_step.py \
-        --out ${FIGURES}/${k}/ba_infected_vs_step.pdf \
+        --out ${FIGURES}/${k}/ba_infected_vs_step_beta=${beta}_gamma=${gamma}.pdf \
         --xlabel "krok symulacji \$t$" \
         --ylabel "procent populacji"

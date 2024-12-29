@@ -7,8 +7,8 @@ parallel --lb \
         \| average_last_10 \
         \| awk \'{ print \"{1}\", \$0 }\' \
         ::: max min rnd \
-        ::: `seq 0 0.005 0.1` \
-        ::: {1..10} \
+        ::: `seq 0 0.01 0.2` \
+        ::: {1..100} \
 | average_by 0 1 \
 | tee ${OUTPUT}/none/ba_max_min_rnd_$now \
 | python ${PLOT}/plot_max_min_rnd.py \
